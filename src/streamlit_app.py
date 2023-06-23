@@ -441,10 +441,12 @@ def _brother(pronoun_val):
 
 init_state()
 
-with st.expander("Session State"):
-    st.write(st.session_state)
-
 if not st.session_state.story_in_progress:
     get_story_prompt_view()
 else:
     main_view()
+
+with st.expander("Session State"):
+    st.write(st.session_state)
+
+
