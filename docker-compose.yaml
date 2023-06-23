@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  littlecattales:
+    image: littlecattales:latest
+    build:
+      context: ./
+    environment:
+      OPENAI_API_KEY: "${OPENAI_API_KEY?Variable not set}"
+      SESSION_DIR: "/app/data"
+    volumes:
+      - ./local/appData:/app/data
+    ports:
+      - 9999:8501

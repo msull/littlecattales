@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  littlecattales:
+    image: littlecattales:latest
+    networks:
+      - traefik-public
+    environment:
+      OPENAI_API_KEY: "${OPENAI_API_KEY?Variable not set}"
+      SESSION_DIR: "/app/data"
+    volumes:
+      - appData:/app/data
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.littlecattales-http.rule=Host(`${DOMAIN?Variable not set}`)
+        - traefik.http.routers.littlecattales-http.entrypoints=http
+        - traefik.http.routers.littlecattales-http.middlewares=https-redirect
+        - traefik.http.routers.littlecattales-https.rule=Host(`${DOMAIN?Variable not set}`)
+        - traefik.http.routers.littlecattales-https.entrypoints=https
+        - traefik.http.routers.littlecattales-https.tls=true
+        - traefik.http.routers.littlecattales-https.tls.certresolver=le
+        - traefik.http.services.littlecattales.loadbalancer.server.port=8501
+
+volumes:
+  appData: {}
+
+networks:
+  traefik-public:
+    external: true
