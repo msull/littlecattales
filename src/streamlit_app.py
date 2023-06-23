@@ -2,6 +2,7 @@ import os
 import random
 from dataclasses import dataclass
 from pathlib import Path
+from time import sleep
 from typing import Optional
 
 import streamlit as st
@@ -16,16 +17,20 @@ SESSION_DIR = os.environ["SESSION_DIR"]
 saved_tales_dir = Path(SESSION_DIR) / "cat_tales" / "adventures"
 saved_tales_dir.mkdir(parents=True, exist_ok=True)
 
+IMAGE_DIR = (Path(__file__).parent / "images").relative_to(Path(__file__).parent)
 
-def init_state():
-    if "story_in_progress" not in st.session_state:
-        load_session(saved_tales_dir)
+
+def init_state(force=False):
+    if "story_in_progress" not in st.session_state or force:
+        if not force:
+            load_session(saved_tales_dir)
+
         if "story_in_progress" not in st.session_state:
             start_new_story = True
         else:
             start_new_story = False
 
-        if start_new_story:
+        if start_new_story or force:
             logger.info("Starting new story")
             session_id = date_id()
             st.session_state.story_in_progress = False
@@ -33,23 +38,39 @@ def init_state():
             st.session_state.bad_responses = []
             st.session_state.total_tokens_used = 0
             st.session_state.num_choices_made = 0
-            st.session_state.max_choices_per_story = 5
+            st.session_state.max_choices_per_story = 4
             cat1, cat2 = random.choice(CAT_NAMES)
             st.session_state.cat1name = cat1[0]
             st.session_state.cat2name = cat2[0]
             st.session_state.cat1pronouns = cat1[1]
             st.session_state.cat2pronouns = cat2[1]
 
+            # chose some images to display during the story
+            cat_imgs = random.sample(
+                [str(x) for x in (IMAGE_DIR / "cats").iterdir()], k=4
+            )
+            st.session_state.message_images = {}
+            st.session_state.cat_image1 = cat_imgs[0]
+            st.session_state.cat_image1_used = True
+            st.session_state.cat_image2 = cat_imgs[1]
+            st.session_state.cat_image2_used = False
+            st.session_state.cat_image3 = cat_imgs[2]
+            st.session_state.cat_image3_used = False
+            st.session_state.cat_image4 = cat_imgs[3]
+            st.session_state.cat_image4_used = False
+            st.session_state.rusty_image = random.choice(
+                [str(x) for x in (IMAGE_DIR / "rusty").iterdir()]
+            )
+            st.session_state.rusty_image_used = False
+            st.session_state.missolive_image = random.choice(
+                [str(x) for x in (IMAGE_DIR / "missolive").iterdir()]
+            )
+            st.session_state.missolive_image_used = False
+
 
 def reset_state():
     logger.debug("Resetting state")
-    session_id = date_id()
-    st.session_state.story_in_progress = False
-    st.session_state.session_id = session_id
-    st.session_state.bad_responses = []
-    st.session_state.total_tokens_used = 0
-    st.session_state.num_choices_made = 0
-    st.session_state.max_choices_per_story = 4
+    init_state(True)
 
 
 def get_story_prompt_view():
@@ -101,7 +122,14 @@ def get_story_prompt_view():
                 st.session_state.cat2pronouns = cat2pronouns
                 st.experimental_rerun()
 
-    st.markdown(add_cat_names(USER_INTRO_TEXT))
+    columns = iter(st.columns((0.5, 3, 3, 0.5)))
+    next(columns)  # throw away for formatting only -- empty columns on both sides
+    with next(columns):
+        st.markdown(add_cat_names(USER_INTRO_TEXT))
+    with next(columns):
+        st.image(st.session_state.cat_image1)
+
+    st.markdown(add_cat_names(READY_TEXT))
 
     if "random_story_idea" not in st.session_state:
         st.session_state.random_story_idea = ""
@@ -130,10 +158,12 @@ class ResponseWithChoices:
     choice2: str
 
     content: str  # cleaned response without choices
+    raw_msg: str  # full, raw message
 
 
 def _extract_choices(content: str) -> ResponseWithChoices:
     """Extract choices from the message; return the cleaned string without those cmds."""
+    raw_content = content
     choice1 = ""
     choice2 = ""
     remove_lines = []
@@ -151,7 +181,9 @@ def _extract_choices(content: str) -> ResponseWithChoices:
         content = content.replace(line, "")
     content = content.replace("\n\n\n", "\n\n").strip()
 
-    return ResponseWithChoices(choice1=choice1, choice2=choice2, content=content)
+    return ResponseWithChoices(
+        choice1=choice1, choice2=choice2, content=content, raw_msg=raw_content
+    )
 
 
 def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=True):
@@ -177,10 +209,23 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
         while not got_valid_response:
             logger.info("Generating AI Response for story")
             attempts += 1
-            response = chat_session.get_ai_response(
-                initial_system_msg=add_cat_names(AI_ASSISTANT_MSG),
-                reinforcement_system_msg=reinforce_with,
-            )
+            try:
+                response = chat_session.get_ai_response(
+                    initial_system_msg=add_cat_names(AI_ASSISTANT_MSG),
+                    reinforcement_system_msg=reinforce_with,
+                )
+            except Exception:  # error from OpenAI
+                logger.exception("Error while getting AI Resopnse")
+                sleep(1)
+                if attempts >= max_attempts:
+                    logger.info("Out of attempts")
+                    st.error(
+                        "Encountered an error generating your story, sorry about that"
+                    )
+                    return
+                else:
+                    continue
+
             logger.debug(response)
             st.session_state.total_tokens_used += response["usage"]["total_tokens"]
             try:
@@ -209,20 +254,86 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
     st.experimental_rerun()
 
 
+def display_story_message(msg_num: int, message: ResponseWithChoices):
+    is_last_message = not message.choice1
+
+    # always show picture at end
+    if is_last_message:
+        # write content, then large ending image
+        columns = iter(st.columns((0.5, 6, 0.5)))
+        next(columns)  # throw away for formatting only -- empty columns on both sides
+        with next(columns):
+            st.write(message.content)
+            if "ending_image" in st.session_state:
+                # display existing ending image
+                pass
+            else:
+                # generate new ending image
+                pass
+        return
+
+    # otherwise, show an image every other msg
+    if msg_num % 2:
+        columns = iter(st.columns((0.5, 3, 3, 0.5)))
+        next(columns)  # throw away for formatting only -- empty columns on both sides
+
+        # try Olive first, then Rusty, then just show cats
+        display_image = None
+        if str(msg_num) in st.session_state.message_images:
+            display_image = st.session_state.message_images[str(msg_num)]
+        else:
+            if "Olive" in message.raw_msg and not st.session_state.missolive_image_used:
+                display_image = st.session_state.missolive_image
+                st.session_state.missolive_image_used = True
+            elif "Rusty" in message.raw_msg and not st.session_state.rusty_image_used:
+                display_image = st.session_state.rusty_image
+                st.session_state.rusty_image_used = True
+            else:
+                if not st.session_state.cat_image2_used:
+                    display_image = st.session_state.cat_image2
+                    st.session_state.cat_image2_used = True
+                elif not st.session_state.cat_image3_used:
+                    display_image = st.session_state.cat_image3
+                    st.session_state.cat_image3_used = True
+                elif not st.session_state.cat_image4_used:
+                    display_image = st.session_state.cat_image4
+                    st.session_state.cat_image4_used = True
+
+            st.session_state.message_images[str(msg_num)] = display_image
+
+        save_session(saved_tales_dir)
+
+        with next(columns):
+            st.image(display_image)
+        with next(columns):
+            st.markdown(add_cat_names(message.content))
+    else:
+        columns = iter(st.columns((0.5, 6, 0.5)))
+        next(columns)  # throw away for formatting only -- empty columns on both sides
+        with next(columns):
+            st.write(message.content)
+
+
 def main_view():
     common_view()
     with st.expander("Intro"):
         st.markdown(add_cat_names(USER_INTRO_TEXT))
 
+    columns = iter(st.columns(5))
+
+    next(columns)
+    next(columns)
+    with next(columns):
+        st.image(st.session_state.cat_image1)
     chat_session = ChatSession(history=st.session_state.chat_history)
 
     st.subheader("Prompt: " + chat_session.history[0]["content"])
 
     choices = None
-    for msg in chat_session.history[1:]:
+    for idx, msg in enumerate(chat_session.history[1:]):
         if msg["role"] == "assistant":
             choices = _extract_choices(msg["content"])
-            st.write(choices.content)
+            display_story_message(idx + 1, choices)
         elif msg["role"] == "user":
             st.write(
                 f"<div style='color: green;'> &gt; {msg['content']}</div>",
@@ -329,10 +440,11 @@ def _brother(pronoun_val):
 
 
 init_state()
+
+with st.expander("Session State"):
+    st.write(st.session_state)
+
 if not st.session_state.story_in_progress:
     get_story_prompt_view()
 else:
     main_view()
-
-with st.expander("Session State"):
-    st.write(st.session_state)

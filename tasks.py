@@ -19,3 +19,12 @@ class Paths:
 def compile_requirements(c):
     with Paths.cd(c, Paths.repo_root):
         c.run("pip-compile --resolver=backtracking -v -o requirements.txt")
+
+
+@task
+def run_streamlit(c):
+    with Paths.cd(c, Paths.repo_root / "src"):
+        c.run(
+            "python -m streamlit run streamlit_app.py",
+            pty=True,
+        )

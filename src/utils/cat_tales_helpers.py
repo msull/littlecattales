@@ -16,7 +16,9 @@ Your prompt will set the stage for the cats' next adventure.
 Once the story starts to unfold, **you** will become the director of their tale. 
 At different moments in the story, you'll be presented with two choices—just 
 pick the one you prefer, and watch as the adventure continues based on your selection. 📚🔍
+"""
 
+READY_TEXT = """
 🚀 **Ready to guide {CAT_NAME1} and {CAT_NAME2} on their next adventure? 
 Please provide a story idea to begin.** 🎩🎈
 """
@@ -297,9 +299,14 @@ AI_REINFORCEMENT_MSG = """
 Don't forget, you're an AI Helper making fun, choose-your-own-adventure stories 
 about the trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}. 
 Your job is to start the story based on the idea given, 
-then give two clear choices for the user to pick from. 
-Use simple words that a 1st grader can easily understand.
+then give two clear choices for the user to pick from:
 
+CHOICE 1: <Text>
+
+CHOICE 2: <Text>
+
+You are the one outputting the choices, never say things like "Remember to keep the choices simple and clear."
+Use simple words that a 1st grader can easily understand.
 Do not output any additional text after outputting the two choices.
 """
 
@@ -311,7 +318,9 @@ Always use simple words that a 1st grader can easily understand.
 For the choice the user has just selected, the story is going to end early,
 as though the user has made a "bad" choice. 
 Conclude the story with the {BROTHER}s suffering a minor negative consequence.
-Do not offer any additional choices.
+Do not offer any additional choices. 
+
+Do not write more than three paragraphs maximum.
 """
 
 ENDING_REINFORCEMENT_MSG = """
@@ -320,5 +329,24 @@ about the trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}.
 Always Use simple words that a 1st grader can easily understand.
 
 The conclusion should be influenced by the user's final choice and offer a 
-satisfying end to the adventure.
+satisfying end to the adventure. 
+
+Do not write more than three paragraphs maximum.
+"""
+
+
+ENDING_IMAGE_GEN_MSG = """
+Given the following ending of a short children's story involving the adventures of two cat siblings, write a very brief single line description summarizing the end of the plot. The most important thing is to say what the two cat siblings are doing, mention any other major character, and provide a settings for them. The characters should be simply described, rather than named. This will be used to generate a picture to accompany the text. Every description should begin "An oil painting of..."
+
+The following characters may also be mentioned:
+
+Miss Olive: A smart old owl who lives in the tree near the cats' house and gives good advice.
+Daisy: A friendly and talkative squirrel who knows everything that's happening around.
+Rusty: A kind, funny dog who lives with the cats and thinks they're his best friends.
+
+Be sure to not use the names of Miss Olive, Daisy, or Rusty either, say "owl", "squirrel", and "dog" instead.
+
+Example: "An oil painting of two cats sitting in a tree while a dog sleeps at the base"
+
+Story text beings now:
 """
