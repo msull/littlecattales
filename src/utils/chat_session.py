@@ -17,7 +17,11 @@ class ChatSession:
     def assistant_says(self, message):
         self.history.append({"role": "assistant", "content": message})
 
-    def get_ai_response(self, initial_system_msg: Optional[str] = None, reinforcement_system_msg: Optional[str] = None):
+    def get_ai_response(
+        self,
+        initial_system_msg: Optional[str] = None,
+        reinforcement_system_msg: Optional[str] = None,
+    ):
         chat_history = self.history[:]
         # add the initial system message describing the AI's role
         if initial_system_msg:
@@ -26,7 +30,9 @@ class ChatSession:
         if reinforcement_system_msg:
             chat_history.append({"role": "system", "content": reinforcement_system_msg})
 
-        return openai.ChatCompletion.create(model="gpt-3.5-turbo-0613", messages=chat_history)
+        return openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0613", messages=chat_history
+        )
 
 
 class FlaggedInputError(RuntimeError):

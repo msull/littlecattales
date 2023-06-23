@@ -1,11 +1,11 @@
 import json
-from pathlib import Path
-
-import streamlit as st
 import random
 from datetime import datetime
+from pathlib import Path
 from string import ascii_lowercase
 from typing import Callable, List, Optional, Union
+
+import streamlit as st
 
 
 def item_paginator(
@@ -52,7 +52,9 @@ def item_paginator(
         c1, c2, c3, c4, c5, c6, c7 = st.columns((2, 2, 1, 3, 1, 2, 2))
     if isinstance(items, int):
         if display_item_names:
-            raise ValueError("Cannot set display_item_names=True when passing an integer for items")
+            raise ValueError(
+                "Cannot set display_item_names=True when passing an integer for items"
+            )
     item_count = items if isinstance(items, int) else len(items)
 
     if st.session_state[item_num_var] > item_count - 1:
@@ -60,8 +62,6 @@ def item_paginator(
 
     if st.session_state[item_num_var] < 0:
         st.session_state[item_num_var] = 0
-
-
 
     if not item_count:
         st.write("No items to display")
@@ -82,9 +82,16 @@ def item_paginator(
 
     if item_actions:
         with c2:
-            selected_action = st.selectbox("select-item-action", sorted(item_actions), label_visibility="collapsed")
+            selected_action = st.selectbox(
+                "select-item-action", sorted(item_actions), label_visibility="collapsed"
+            )
 
-        if c3.button("Go", use_container_width=True, key=f"ItemPaginator:{title}#Go_btn") and selected_action:
+        if (
+            c3.button(
+                "Go", use_container_width=True, key=f"ItemPaginator:{title}#Go_btn"
+            )
+            and selected_action
+        ):
             item_actions[selected_action](st.session_state[item_num_var])
             st.experimental_rerun()
 
@@ -114,7 +121,9 @@ def item_paginator(
             st.experimental_rerun()
 
     def increment_item_index():
-        st.session_state[item_num_var] = min(item_count - 1, st.session_state[item_num_var] + 1)
+        st.session_state[item_num_var] = min(
+            item_count - 1, st.session_state[item_num_var] + 1
+        )
 
     c7.button(
         "Next",
@@ -193,7 +202,10 @@ def load_session(session_dir: Union[Path, str]):
 
         preserved = {key: st.session_state.get(key) for key in preserve_keys}
 
-        if "session_id" in st.session_state and st.session_state.session_id != query_session:
+        if (
+            "session_id" in st.session_state
+            and st.session_state.session_id != query_session
+        ):
             st.session_state.clear()
             for key, value in preserved.items():
                 st.session_state[key] = value
@@ -207,7 +219,9 @@ def load_session(session_dir: Union[Path, str]):
                 pass
             else:
                 for k, v in loaded_session_data.items():
-                    if not k.startswith("FormSubmitter") and not k.startswith("ItemPaginator"):
+                    if not k.startswith("FormSubmitter") and not k.startswith(
+                        "ItemPaginator"
+                    ):
                         st.session_state[k] = v
                 assert st.session_state["session_id"] == query_session
 

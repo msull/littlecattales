@@ -8,8 +8,8 @@ import streamlit as st
 from logzero import logger
 
 from utils.cat_tales_helpers import *
-from utils.chat_session import check_for_flagged_content, ChatSession
-from utils.page_helpers import save_session, load_session, date_id
+from utils.chat_session import ChatSession, check_for_flagged_content
+from utils.page_helpers import date_id, load_session, save_session
 
 st.set_page_config("Little Cat Tales", layout="wide")
 SESSION_DIR = os.environ["SESSION_DIR"]
@@ -33,7 +33,7 @@ def init_state():
             st.session_state.bad_responses = []
             st.session_state.total_tokens_used = 0
             st.session_state.num_choices_made = 0
-            st.session_state.max_choices_per_story = 4
+            st.session_state.max_choices_per_story = 5
             cat1, cat2 = random.choice(CAT_NAMES)
             st.session_state.cat1name = cat1[0]
             st.session_state.cat2name = cat2[0]
@@ -107,7 +107,9 @@ def get_story_prompt_view():
         st.session_state.random_story_idea = ""
 
     if st.button("Get a random story prompt"):
-        st.session_state.random_story_idea = add_cat_names(random.choice(STORY_IDEAS))
+        st.session_state.random_story_idea = add_cat_names(
+            random.choice(SIMPLIFIED_STORY_IDEAS)
+        )
 
     with st.form("prompt-form", clear_on_submit=True):
         prompt = st.text_area(
@@ -158,6 +160,16 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
     if not spinner_msg:
         spinner_msg = add_cat_names(random.choice(SPINNER_MSGS))
 
+    if expect_more_choices:
+        if random.random() < 0.2 and len(chat_session.history) > 1:
+            logger.warning("Early end incoming!")
+            expect_more_choices = False
+            reinforce_with = add_cat_names(BAD_ENDING_REINFORCEMENT_MSG)
+        else:
+            reinforce_with = add_cat_names(AI_REINFORCEMENT_MSG)
+    else:
+        reinforce_with = add_cat_names(ENDING_REINFORCEMENT_MSG)
+
     with st.spinner(spinner_msg):
         got_valid_response = False
         attempts = 0
@@ -165,10 +177,6 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
         while not got_valid_response:
             logger.info("Generating AI Response for story")
             attempts += 1
-            if expect_more_choices:
-                reinforce_with = add_cat_names(AI_REINFORCEMENT_MSG)
-            else:
-                reinforce_with = ""
             response = chat_session.get_ai_response(
                 initial_system_msg=add_cat_names(AI_ASSISTANT_MSG),
                 reinforcement_system_msg=reinforce_with,

@@ -1,11 +1,12 @@
 HEADER_TEXT = "🐾 Welcome to the Adventures of {CAT_NAME1} and {CAT_NAME2}! 🐾"
 USER_INTRO_TEXT = """
-Meet {CAT_NAME1} and {CAT_NAME2}, two {BROTHER} cats 🐱 known for their playful pranks and thrilling adventures. 
-{CAT_NAME1}, the older {CAT1BROTHER} of the two, is the mastermind behind their pranks with {CAT1HIS} sharp mind and keen eye for detail. 
-{CAT_NAME2}, the younger {CAT2BROTHER}, is always bursting with energy, courageously pulling off their 
-mischievous plans with a sparkle in {CAT2HIS} eyes.
+Say hello to {CAT_NAME1} and {CAT_NAME2}, two {BROTHER} cats 🐱 who love playing tricks and going on fun adventures. 
+{CAT_NAME1}, the older {CAT1BROTHER}, is really good at thinking up tricks 
+because of {CAT1HIS} smart mind and sharp eyes. 
+{CAT_NAME2}, the younger {CAT2BROTHER}, is full of excitement and bravery, 
+perfect at pulling off the tricks with a twinkle in {CAT2HIS} eyes.
 
-**Your job is to guide these two {BROTHER}s on their next escapade!**
+**Your job is to guide these two {BROTHER}s on their next adventure!**
 
 To get started, we invite you to input a story prompt. 
 This could be as magical as _"{CAT_NAME1} and {CAT_NAME2} discover a treasure map"_ or as mysterious as 
@@ -71,6 +72,77 @@ SPINNER_MSGS = [
     "{CAT_NAME1} and {CAT_NAME2} are sneaking through the alley of thoughts...",
     "Hang tight - a hairball of ideas is being coughed up!",
     "The cats are taking a catnap to dream up the next part...",
+]
+SIMPLIFIED_STORY_IDEAS = [
+    "{CAT_NAME1} and {CAT_NAME2} find a secret door in their house.",
+    "The cats find a bird who speaks their language.",
+    "{CAT_NAME1} turns invisible after finding a shiny rock.",
+    "{CAT_NAME2} gets stuck in a tree and {CAT_NAME1} must help {CAT2HIM}.",
+    "The cats find a secret map in their toy box.",
+    "{CAT_NAME1} and {CAT_NAME2} visit a world where cats are in charge.",
+    "The cats find a hidden door in the backyard.",
+    "{CAT_NAME1} and {CAT_NAME2} ride a big balloon to the sky.",
+    "{CAT_NAME2} can only speak in rhymes after meeting a funny witch.",
+    "{CAT_NAME1} finds a special collar that gives {CAT1HIM}} three wishes.",
+    "The cats become superheroes for a day after finding a magic cape.",
+    "The cats are mistaken for aliens by the neighborhood dogs.",
+    "The cats find a magical lamp in the attic.",
+    "The cats find a chest full of toys in their sandbox.",
+    "{CAT_NAME2} turns everything he touches into fish after making a wish.",
+    "{CAT_NAME1} learns to talk to humans for a day.",
+    "{CAT_NAME1} and {CAT_NAME2} help a ghost find his house.",
+    "The cats find a tunnel that leads to a magic forest.",
+    "The cats switch bodies for a day after finding a magic stone.",
+    "The cats find a flying potion in a cookbook.",
+    "{CAT_NAME1} and {CAT_NAME2} find a big dragon in the basement.",
+    "The cats go on a boat ride with pirate mice.",
+    "A rainbow leads the cats to a treasure in the garden.",
+    "{CAT_NAME1} becomes a king for a day after finding a crown in the park.",
+    "The cats find a game that comes to life.",
+    "{CAT_NAME1} runs super fast after stepping in a magic puddle.",
+    "The cats can change the weather with their whiskers.",
+    "{CAT_NAME2} finds a magic watch that can go back in time.",
+    "The cats save their house from an army of ants.",
+    "{CAT_NAME1} and {CAT_NAME2} find a magic carpet under their bed.",
+    "The cats step into a painting and explore its world.",
+    "The cats find a magic book that makes their drawings real.",
+    "{CAT_NAME1} finds a mirror that shows tomorrow's weather.",
+    "The cats help a unicorn go back to the rainbow land.",
+    "{CAT_NAME1} and {CAT_NAME2} find a magic gnome in their garden.",
+    "The cats go on an adventure in their dreams.",
+    "The cats find a lamp that makes their shadows dance.",
+    "The cats find a bell that brings animals to their house.",
+    "A moonbeam takes the cats to a dreamland.",
+    "The cats help their friends escape from a scary scarecrow.",
+    "{CAT_NAME1} and {CAT_NAME2} help a baby bird fly.",
+    "The cats turn into big lions after finding a magic stone.",
+    "{CAT_NAME1} and {CAT_NAME2} find a magic well in their garden.",
+    "The cats help a fairy princess find her castle.",
+    "{CAT_NAME1} finds a compass that leads to ice cream.",
+    "A shooting star gives the cats magic powers.",
+    "{CAT_NAME2} finds a whistle that makes the wind blow.",
+    "{CAT_NAME1} and {CAT_NAME2} join a race with the squirrels.",
+    "{CAT_NAME1} finds a magic paintbrush that brings {CAT1HIS} drawings to life.",
+    "{CAT_NAME2} finds a garden gnome that walks at night.",
+    "The cats join a circus run by animals.",
+    "{CAT_NAME1} and {CAT_NAME2} help an alien find her spaceship.",
+    "The cats find a secret room under their house.",
+    "{CAT_NAME1} takes a picture of tomorrow with a magic camera.",
+    "The cats get trapped in their favorite video game.",
+    "A magic music box takes the cats to different times.",
+    "{CAT_NAME2} makes friends with a cloud that rains candy.",
+    "{CAT_NAME1} and {CAT_NAME2} help beavers build a house.",
+    "The cats find a city of moles under the ground.",
+    "{CAT_NAME1} finds a ring that makes {CAT1HIM} big or small.",
+    "A snow globe takes the cats to a snowy land.",
+    "{CAT_NAME2} hears what plants are saying after smelling a flower.",
+    "{CAT_NAME1} and {CAT_NAME2} help mice steal cheese.",
+    "The cats help a baby dragon learn to fly.",
+    "{CAT_NAME1} finds a magic hat that pulls out toys.",
+    "{CAT_NAME2} opens a door to the spirit world with a special necklace.",
+    "The cats help a scarecrow protect the garden.",
+    "{CAT_NAME1} and {CAT_NAME2} paint their perfect day with magic paints.",
+    "The cats find a feather that lets them speak with birds.",
 ]
 
 STORY_IDEAS = [
@@ -150,8 +222,44 @@ STORY_IDEAS = [
     "{CAT_NAME1} and {CAT_NAME2} find an enchanted paint set and paint their perfect day.",
     "The cats find a magic feather that allows them to speak with birds.",
 ]
-
 AI_ASSISTANT_MSG = """
+You're an AI Helper, making fun, choose-your-own-adventure stories about two trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}.
+
+{CAT_NAME1} is the older {CAT1BROTHER}-- {CAT1HE}'s really good at thinking up tricks because {CAT1HE}'s always full of ideas, 
+notices everything, and plans really well. 
+{CAT_NAME2} is the younger {CAT2BROTHER}-- {CAT2HE}'s always excited and brave. {CAT2HE}'s the one who pulls off the tricks perfectly.
+
+You can also add three friends in the stories:
+
+Miss Olive: A smart old owl who lives in the tree near the cats' house and gives good advice.
+Daisy: A friendly and talkative squirrel who knows everything that's happening around.
+Rusty: A kind, funny dog who lives with the cats and thinks they're his best friends.
+
+You can put these friends in your stories, but they don't need to be in all of them.
+
+Here's how you make the stories:
+
+User Input: The user will start by giving a basic idea for the story. Use this as the base for your story.
+
+Story Start: Start the story with a few lines, telling about {CAT_NAME1} and {CAT_NAME2} starting their new adventure, based on the user's idea.
+
+Choose a Path: After setting the scene, present two paths the story could take next. The choices should be separated by a newline and formatted as follows:
+
+CHOICE 1: <Text>
+
+CHOICE 2: <Text>
+
+Keep Going: Based on the user's choice, keep telling the story. After a bit, give two more choices.
+
+Story End: After the user's made some choices, finish the story. The ending should come from the user's last pick and be a happy ending to the adventure.
+
+Remember to keep the stories fun, interactive, and just right for kids, using the special traits of 
+{CAT_NAME1}, {CAT_NAME2}, and their friends. 
+The stories should make the users feel like they're part of the fun world of our two trick-playing cats. 
+Use simple words that a 1st grader can easily understand.
+"""
+
+OLD_MSG = """
 You are an AI Assistant, trained to weave engaging, choose-your-own-adventure style stories about two prankster {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}.
 
 {CAT_NAME1}, the older {CAT1BROTHER}, is the mastermind behind their playful pranks; {CAT1HE} is imaginative, has a keen eye for detail, and is known for {CAT1HIS} strategic thinking.
@@ -186,8 +294,31 @@ Your narratives should invite the users to immerse themselves in the adventurous
 """
 
 AI_REINFORCEMENT_MSG = """
-Remember, you are an AI assistant crafting interactive, choose-your-own-adventure style stories about the prankster 
-{BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}. Your task is to set the scene based on the given premise, 
-then provide two distinct choices for the user to select from. 
+Don't forget, you're an AI Helper making fun, choose-your-own-adventure stories 
+about the trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}. 
+Your job is to start the story based on the idea given, 
+then give two clear choices for the user to pick from. 
+Use simple words that a 1st grader can easily understand.
+
 Do not output any additional text after outputting the two choices.
+"""
+
+BAD_ENDING_REINFORCEMENT_MSG = """
+Don't forget, you're an AI Helper making fun, choose-your-own-adventure stories 
+about the trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}.
+Always use simple words that a 1st grader can easily understand.
+
+For the choice the user has just selected, the story is going to end early,
+as though the user has made a "bad" choice. 
+Conclude the story with the {BROTHER}s suffering a minor negative consequence.
+Do not offer any additional choices.
+"""
+
+ENDING_REINFORCEMENT_MSG = """
+Don't forget, you're an AI Helper making fun, choose-your-own-adventure stories 
+about the trick-playing {BROTHER} cats, {CAT_NAME1} and {CAT_NAME2}. 
+Always Use simple words that a 1st grader can easily understand.
+
+The conclusion should be influenced by the user's final choice and offer a 
+satisfying end to the adventure.
 """
