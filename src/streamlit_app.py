@@ -409,7 +409,7 @@ def main_view():
 
 
 def common_view():
-    columns = iter(st.columns((1, 2, 1)))
+    columns = iter(st.columns((1, 1, 1)))
     next(columns)  # throw away for formatting only -- empty columns on both sides
     with next(columns):
         st.header(add_cat_names(HEADER_TEXT))
