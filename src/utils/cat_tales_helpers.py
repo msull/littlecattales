@@ -85,7 +85,7 @@ SIMPLIFIED_STORY_IDEAS = [
     "The cats find a hidden door in the backyard.",
     "{CAT_NAME1} and {CAT_NAME2} ride a big balloon to the sky.",
     "{CAT_NAME2} can only speak in rhymes after meeting a funny witch.",
-    "{CAT_NAME1} finds a special collar that gives {CAT1HIM}} three wishes.",
+    "{CAT_NAME1} finds a special collar that gives {CAT1HIM} three wishes.",
     "The cats become superheroes for a day after finding a magic cape.",
     "The cats are mistaken for aliens by the neighborhood dogs.",
     "The cats find a magical lamp in the attic.",
@@ -336,7 +336,12 @@ Do not write more than three paragraphs maximum.
 
 
 ENDING_IMAGE_GEN_MSG = """
-Given the following ending of a short children's story involving the adventures of two cat siblings, write a very brief single line description summarizing the end of the plot. The most important thing is to say what the two cat siblings are doing, mention any other major character, and provide a settings for them. The characters should be simply described, rather than named. This will be used to generate a picture to accompany the text. Every description should begin "An oil painting of..."
+Given the following ending of a short children's story involving the adventures of two cat siblings, 
+write a very brief single line description summarizing the end of the plot. 
+The most important thing is to say what the two cat siblings are doing,
+mention any other major character, and provide a settings for them. 
+The characters should be simply described, rather than named. 
+This will be used to generate a picture to accompany the text. 
 
 The following characters may also be mentioned:
 
@@ -344,9 +349,10 @@ Miss Olive: A smart old owl who lives in the tree near the cats' house and gives
 Daisy: A friendly and talkative squirrel who knows everything that's happening around.
 Rusty: A kind, funny dog who lives with the cats and thinks they're his best friends.
 
-Be sure to not use the names of Miss Olive, Daisy, or Rusty either, say "owl", "squirrel", and "dog" instead.
+Be sure to not use the names of Miss Olive, Daisy, or Rusty either, say "owl", "squirrel", and "dog" 
+instead, and don't mention them at all if they aren't in the story text.
 
-Example: "An oil painting of two cats sitting in a tree while a dog sleeps at the base"
+Every description should begin "An oil painting of..."
 
 Story text beings now:
 """

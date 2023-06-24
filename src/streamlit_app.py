@@ -1,3 +1,4 @@
+import base64
 import os
 import random
 from dataclasses import dataclass
@@ -10,12 +11,15 @@ from logzero import logger
 
 from utils.cat_tales_helpers import *
 from utils.chat_session import ChatSession, check_for_flagged_content
+from utils.image_helpers import create_image, create_image_prompt
 from utils.page_helpers import date_id, load_session, save_session
 
 st.set_page_config("Little Cat Tales", layout="wide")
 SESSION_DIR = os.environ["SESSION_DIR"]
 saved_tales_dir = Path(SESSION_DIR) / "cat_tales" / "adventures"
 saved_tales_dir.mkdir(parents=True, exist_ok=True)
+generated_images_dir = Path(SESSION_DIR) / "cat_tales" / "generated_images"
+generated_images_dir.mkdir(parents=True, exist_ok=True)
 
 IMAGE_DIR = (Path(__file__).parent / "images").relative_to(Path(__file__).parent)
 
@@ -50,6 +54,8 @@ def init_state(force=False):
                 [str(x) for x in (IMAGE_DIR / "cats").iterdir()], k=4
             )
             st.session_state.message_images = {}
+            st.session_state.ending_image = None
+            st.session_state.ending_prompt = None
             st.session_state.cat_image1 = cat_imgs[0]
             st.session_state.cat_image1_used = True
             st.session_state.cat_image2 = cat_imgs[1]
@@ -129,12 +135,15 @@ def get_story_prompt_view():
     with next(columns):
         st.image(st.session_state.cat_image1)
 
-    st.markdown(add_cat_names(READY_TEXT))
+    columns = iter(st.columns((1, 2, 1)))
+    next(columns)  # throw away for formatting only -- empty columns on both sides
+    with next(columns):
+        st.markdown(add_cat_names(READY_TEXT))
 
     if "random_story_idea" not in st.session_state:
         st.session_state.random_story_idea = ""
 
-    if st.button("Get a random story prompt"):
+    if st.button("Get a random story prompt", use_container_width=True):
         st.session_state.random_story_idea = add_cat_names(
             random.choice(SIMPLIFIED_STORY_IDEAS)
         )
@@ -168,8 +177,6 @@ def _extract_choices(content: str) -> ResponseWithChoices:
     choice2 = ""
     remove_lines = []
     for line in content.splitlines():
-        if "CHOICE1" in line:
-            breakpoint()
         if line.startswith("CHOICE 1: "):
             choice1 = line.removeprefix("CHOICE 1: ")
             remove_lines.append(line)
@@ -226,7 +233,6 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
                 else:
                     continue
 
-            logger.debug(response)
             st.session_state.total_tokens_used += response["usage"]["total_tokens"]
             try:
                 choices = _extract_choices(response["choices"][0]["message"]["content"])
@@ -254,6 +260,20 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
     st.experimental_rerun()
 
 
+def generate_ending_image() -> str:
+    chat_session = ChatSession(history=st.session_state.chat_history)
+    prompt_response = create_image_prompt(chat_session)
+    st.session_state.total_tokens_used += prompt_response["usage"]["total_tokens"]
+    image_prompt = prompt_response["choices"][0]["message"]["content"].strip()
+    image_response = create_image(image_prompt)
+    st.session_state.ending_prompt = image_prompt
+    image_bytes = base64.b64decode(image_response.data[0]["b64_json"])
+    output_path = generated_images_dir / (st.session_state.session_id + ".png")
+    with output_path.open("wb") as f:
+        f.write(image_bytes)
+    return str(output_path)
+
+
 def display_story_message(msg_num: int, message: ResponseWithChoices):
     is_last_message = not message.choice1
 
@@ -264,12 +284,17 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
         next(columns)  # throw away for formatting only -- empty columns on both sides
         with next(columns):
             st.write(message.content)
-            if "ending_image" in st.session_state:
-                # display existing ending image
-                pass
-            else:
-                # generate new ending image
-                pass
+            if not (ending_image := st.session_state.get("ending_image")):
+                ending_image = generate_ending_image()
+                st.session_state.ending_image = ending_image
+                save_session(saved_tales_dir)
+            inner_columns = iter(st.columns((1, 1, 1)))
+            next(
+                inner_columns
+            )  # throw away for formatting only -- empty columns on both sides
+            with next(inner_columns):
+                st.image(ending_image)
+
         return
 
     # otherwise, show an image every other msg
@@ -282,10 +307,10 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
         if str(msg_num) in st.session_state.message_images:
             display_image = st.session_state.message_images[str(msg_num)]
         else:
-            if "Olive" in message.raw_msg and not st.session_state.missolive_image_used:
+            if "Olive" in message.content and not st.session_state.missolive_image_used:
                 display_image = st.session_state.missolive_image
                 st.session_state.missolive_image_used = True
-            elif "Rusty" in message.raw_msg and not st.session_state.rusty_image_used:
+            elif "Rusty" in message.content and not st.session_state.rusty_image_used:
                 display_image = st.session_state.rusty_image
                 st.session_state.rusty_image_used = True
             else:
@@ -370,13 +395,24 @@ def main_view():
         del c1
         if st.button("Start Over", use_container_width=True, type="primary"):
             st.experimental_set_query_params(s="")
+            save_cat1name = st.session_state.cat1name
+            save_cat2name = st.session_state.cat2name
+            save_cat1pronouns = st.session_state.cat1pronouns
+            save_cat2pronouns = st.session_state.cat2pronouns
             reset_state()
+            st.session_state.cat1name = save_cat1name
+            st.session_state.cat2name = save_cat2name
+            st.session_state.cat1pronouns = save_cat1pronouns
+            st.session_state.cat2pronouns = save_cat2pronouns
             st.experimental_rerun()
         return
 
 
 def common_view():
-    st.header(add_cat_names(HEADER_TEXT))
+    columns = iter(st.columns((1, 2, 1)))
+    next(columns)  # throw away for formatting only -- empty columns on both sides
+    with next(columns):
+        st.header(add_cat_names(HEADER_TEXT))
 
 
 def add_cat_names(input: str) -> str:
@@ -448,5 +484,3 @@ else:
 
 with st.expander("Session State"):
     st.write(st.session_state)
-
-
