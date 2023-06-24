@@ -134,11 +134,10 @@ def get_story_prompt_view():
         st.markdown(add_cat_names(USER_INTRO_TEXT))
     with next(columns):
         st.image(st.session_state.cat_image1)
-
-    columns = iter(st.columns((1, 2, 1)))
-    next(columns)  # throw away for formatting only -- empty columns on both sides
-    with next(columns):
-        st.markdown(add_cat_names(READY_TEXT))
+    st.markdown(
+        f"<h3 style='text-align: center; color: black;'>{add_cat_names(READY_TEXT)}</h3>",
+        unsafe_allow_html=True,
+    )
 
     if "random_story_idea" not in st.session_state:
         st.session_state.random_story_idea = ""
@@ -409,10 +408,10 @@ def main_view():
 
 
 def common_view():
-    columns = iter(st.columns((1, 5, 1)))
-    next(columns)  # throw away for formatting only -- empty columns on both sides
-    with next(columns):
-        st.header(add_cat_names(HEADER_TEXT))
+    st.markdown(
+        f"<h2 style='text-align: center; color: black;'>{add_cat_names(HEADER_TEXT)}</h2>",
+        unsafe_allow_html=True,
+    )
 
 
 def add_cat_names(input: str) -> str:

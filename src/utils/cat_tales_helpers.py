@@ -19,8 +19,8 @@ pick the one you prefer, and watch as the adventure continues based on your sele
 """
 
 READY_TEXT = """
-🚀 **Ready to guide {CAT_NAME1} and {CAT_NAME2} on their next adventure? 
-Please provide a story idea to begin.** 🎩🎈
+🚀 Ready to guide {CAT_NAME1} and {CAT_NAME2} on their next adventure? 
+Please provide a story idea to begin. 🎩🎈
 """
 
 CAT_NAMES = [
