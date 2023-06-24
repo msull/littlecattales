@@ -1,4 +1,4 @@
-HEADER_TEXT = "🐾 Welcome to the Adventures of {CAT_NAME1} and {CAT_NAME2}! 🐾"
+HEADER_TEXT = "🐾Welcome to the Adventures of {CAT_NAME1} and {CAT_NAME2}!🐾"
 USER_INTRO_TEXT = """
 Say hello to {CAT_NAME1} and {CAT_NAME2}, two {BROTHER} cats 🐱 who love playing tricks and going on fun adventures. 
 {CAT_NAME1}, the older {CAT1BROTHER}, is really good at thinking up tricks 
