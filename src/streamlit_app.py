@@ -284,7 +284,8 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
         with next(columns):
             st.write(message.content)
             if not (ending_image := st.session_state.get("ending_image")):
-                ending_image = generate_ending_image()
+                with st.spinner('Generating story image'):
+                    ending_image = generate_ending_image()
                 st.session_state.ending_image = ending_image
                 save_session(saved_tales_dir)
             inner_columns = iter(st.columns((1, 1, 1)))
