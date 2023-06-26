@@ -2,4 +2,4 @@ diskcache
 logzero
 openai
 pydantic
-streamlit
+streamlit>1.23

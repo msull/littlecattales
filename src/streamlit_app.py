@@ -55,7 +55,7 @@ def init_state(force=False):
             )
             st.session_state.message_images = {}
             st.session_state.ending_image = None
-            st.session_state.ending_prompt = None
+            st.session_state.generated_image_prompts = {}
             st.session_state.cat_image1 = cat_imgs[0]
             st.session_state.cat_image1_used = True
             st.session_state.cat_image2 = cat_imgs[1]
@@ -131,9 +131,9 @@ def get_story_prompt_view():
     columns = iter(st.columns((0.5, 3, 3, 0.5)))
     next(columns)  # throw away for formatting only -- empty columns on both sides
     with next(columns):
-        st.markdown(add_cat_names(USER_INTRO_TEXT))
-    with next(columns):
         st.image(st.session_state.cat_image1)
+    with next(columns):
+        st.markdown(add_cat_names(USER_INTRO_TEXT))
     st.markdown(
         f"<h3 style='text-align: center; color: black;'>{add_cat_names(READY_TEXT)}</h3>",
         unsafe_allow_html=True,
@@ -259,15 +259,17 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
     st.experimental_rerun()
 
 
-def generate_ending_image() -> str:
+def generate_current_story_image(msg_number: int) -> str:
     chat_session = ChatSession(history=st.session_state.chat_history)
     prompt_response = create_image_prompt(chat_session)
     st.session_state.total_tokens_used += prompt_response["usage"]["total_tokens"]
     image_prompt = prompt_response["choices"][0]["message"]["content"].strip()
     image_response = create_image(image_prompt)
-    st.session_state.ending_prompt = image_prompt
+    st.session_state.generated_image_prompts[msg_number] = image_prompt
     image_bytes = base64.b64decode(image_response.data[0]["b64_json"])
-    output_path = generated_images_dir / (st.session_state.session_id + ".png")
+    output_path = generated_images_dir / (
+        st.session_state.session_id + f"-{msg_number}.png"
+    )
     with output_path.open("wb") as f:
         f.write(image_bytes)
     return str(output_path)
@@ -284,11 +286,11 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
         with next(columns):
             st.write(message.content)
             if not (ending_image := st.session_state.get("ending_image")):
-                with st.spinner('Generating story image'):
-                    ending_image = generate_ending_image()
+                with st.spinner("Generating story image"):
+                    ending_image = generate_current_story_image(msg_num)
                 st.session_state.ending_image = ending_image
                 save_session(saved_tales_dir)
-            inner_columns = iter(st.columns((1, 1, 1)))
+            inner_columns = iter(st.columns((1, 2, 1)))
             next(
                 inner_columns
             )  # throw away for formatting only -- empty columns on both sides
@@ -299,15 +301,25 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
 
     # otherwise, show an image every other msg
     if msg_num % 2:
+        st.write(f"{msg_num=}")
         columns = iter(st.columns((0.5, 3, 3, 0.5)))
         next(columns)  # throw away for formatting only -- empty columns on both sides
+        with next(columns):
+            st.markdown(add_cat_names(message.content))
 
-        # try Olive first, then Rusty, then just show cats
         display_image = None
         if str(msg_num) in st.session_state.message_images:
             display_image = st.session_state.message_images[str(msg_num)]
         else:
-            if "Olive" in message.content and not st.session_state.missolive_image_used:
+            # generate a new image for message 7 (which is the 3rd AI response), otherwise
+            # pic an image based on who is in the most recent text
+            # try Olive first, then Rusty, then just show cats
+            if msg_num == 7:  # generate a random picture in the middle
+                with st.spinner("Generating story image..."):
+                    display_image = generate_current_story_image(msg_num)
+            elif (
+                "Olive" in message.content and not st.session_state.missolive_image_used
+            ):
                 display_image = st.session_state.missolive_image
                 st.session_state.missolive_image_used = True
             elif "Rusty" in message.content and not st.session_state.rusty_image_used:
@@ -330,8 +342,7 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
 
         with next(columns):
             st.image(display_image)
-        with next(columns):
-            st.markdown(add_cat_names(message.content))
+
     else:
         columns = iter(st.columns((0.5, 6, 0.5)))
         next(columns)  # throw away for formatting only -- empty columns on both sides

@@ -16,9 +16,13 @@ class Paths:
 
 
 @task
-def compile_requirements(c):
+def compile_requirements(c, install=False):
     with Paths.cd(c, Paths.repo_root):
         c.run("pip-compile --resolver=backtracking -v -o requirements.txt")
+        if install:
+            c.run('pip install -r requirements.txt')
+            c.run('pip install -r requirements.dev.txt')
+
 
 
 @task

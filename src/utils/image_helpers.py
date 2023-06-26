@@ -10,7 +10,11 @@ def create_image(prompt):
 
 
 GENERATE_IMAGE_DESCRIPTION_PROMPT = """
-Given the following ending of a short children's story involving the adventures of two cat siblings, write a very brief single line description summarizing the end of the plot. The most important thing is to say what the two cat siblings are doing, mention any other major character, and provide a settings for them. The characters should be simply described, rather than named. This will be used to generate a picture to accompany the text. Every description should begin "An oil painting of..."
+Given the following section of a short children's story involving the adventures of two cat siblings, 
+write a very brief single line description summarizing the main plot element within. 
+The most important thing is to say what the two cat siblings are doing, mention other major characters, 
+and provide a settings for them. The characters should be simply described, rather than named. 
+This will be used to generate a picture to accompany the text. Every description should begin "An oil painting of..."
 
 The following characters may also be mentioned:
 
@@ -18,7 +22,8 @@ Miss Olive: A smart old owl who lives in the tree near the cats' house and gives
 Daisy: A friendly and talkative squirrel who knows everything that's happening around.
 Rusty: A kind, funny dog who lives with the cats and thinks they're his best friends.
 
-Be sure to not use the names of Miss Olive, Daisy, or Rusty either, say "owl", "squirrel", and "dog" instead.
+Be sure to not use the names of Miss Olive, Daisy, or Rusty either, say "owl", "squirrel", and "dog" instead, 
+and to only mention these characters if they appear in the story section.
 
 Example: "An oil painting of two cats sitting in a tree while a dog sleeps at the base"
 
@@ -26,7 +31,7 @@ Story text beings now:
 """
 
 
-def create_image_prompt(chat_history: "ChatSession"):
+def create_image_prompt(chat_history: ChatSession):
     story_ending = "\n\n".join(
         [x["content"] for x in chat_history.history if x["role"] != "system"][-3:]
     )

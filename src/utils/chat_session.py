@@ -31,7 +31,7 @@ class ChatSession:
             chat_history.append({"role": "system", "content": reinforcement_system_msg})
 
         return openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0613", messages=chat_history
+            model="gpt-3.5-turbo-0613", messages=chat_history, timeout=15
         )
 
 
