@@ -263,7 +263,11 @@ def generate_current_story_image(msg_number: int) -> str:
     chat_session = ChatSession(history=st.session_state.chat_history)
     prompt_response = create_image_prompt(chat_session)
     st.session_state.total_tokens_used += prompt_response["usage"]["total_tokens"]
-    image_prompt = prompt_response["choices"][0]["message"]["content"].strip()
+
+    image_prompt: str = prompt_response["choices"][0]["message"]["content"].strip()
+    # adjust art style here...
+    # image_prompt = image_prompt.removeprefix('An oil painting of ').removesuffix('.') + ', digital art.'
+
     image_response = create_image(image_prompt)
     st.session_state.generated_image_prompts[msg_number] = image_prompt
     image_bytes = base64.b64decode(image_response.data[0]["b64_json"])
@@ -291,9 +295,8 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
                 st.session_state.ending_image = ending_image
                 save_session(saved_tales_dir)
             inner_columns = iter(st.columns((1, 2, 1)))
-            next(
-                inner_columns
-            )  # throw away for formatting only -- empty columns on both sides
+            # throw away for formatting only -- empty columns on both sides
+            next(inner_columns)
             with next(inner_columns):
                 st.image(ending_image)
 
@@ -317,11 +320,14 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
                 with st.spinner("Generating story image..."):
                     display_image = generate_current_story_image(msg_num)
             elif (
-                "Olive" in message.content and not st.session_state.missolive_image_used
+                "Olive" in message.content
+                and not st.session_state.missolive_image_used
             ):
                 display_image = st.session_state.missolive_image
                 st.session_state.missolive_image_used = True
-            elif "Rusty" in message.content and not st.session_state.rusty_image_used:
+            elif (
+                "Rusty" in message.content and not st.session_state.rusty_image_used
+            ):
                 display_image = st.session_state.rusty_image
                 st.session_state.rusty_image_used = True
             else:
@@ -335,10 +341,9 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
                     display_image = st.session_state.cat_image4
                     st.session_state.cat_image4_used = True
 
-            st.session_state.message_images[str(msg_num)] = display_image
+        st.session_state.message_images[str(msg_num)] = display_image
 
         save_session(saved_tales_dir)
-
         with next(columns):
             st.image(display_image)
 
