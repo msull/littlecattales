@@ -301,7 +301,6 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
 
     # otherwise, show an image every other msg
     if msg_num % 2:
-        st.write(f"{msg_num=}")
         columns = iter(st.columns((0.5, 3, 3, 0.5)))
         next(columns)  # throw away for formatting only -- empty columns on both sides
         with next(columns):
