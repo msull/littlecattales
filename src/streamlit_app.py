@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import random
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ from logzero import logger
 from utils.cat_tales_helpers import *
 from utils.chat_session import ChatSession, check_for_flagged_content
 from utils.image_helpers import create_image, create_image_prompt
-from utils.page_helpers import date_id, load_session, save_session
+from utils.page_helpers import date_id, item_paginator, load_session, save_session
 
 st.set_page_config("Little Cat Tales", layout="wide")
 SESSION_DIR = os.environ["SESSION_DIR"]
@@ -158,6 +159,66 @@ def get_story_prompt_view():
             st.session_state.chat_history = chat_session.history
             st.session_state.story_in_progress = True
             generate_story_page()
+    st.markdown("<h2 style='text-align: center;'>Or</h2>", unsafe_allow_html=True)
+    with st.expander("Read a previous story"):
+        prompts = extract_prompts_from_saved()
+        prompt_keys = sorted(prompts.keys())
+
+        def display(idx):
+            file = prompts[prompt_keys[idx]]
+            story_data = json.loads((saved_tales_dir / file).read_text())
+
+            columns = iter(st.columns((0.5, 6, 0.5)))
+            next(
+                columns
+            )  # throw away for formatting only -- empty columns on both sides
+            with next(columns):
+                inner_columns = iter(st.columns((1, 2, 1)))
+                # throw away for formatting only -- empty columns on both sides
+                next(inner_columns)
+                with next(inner_columns):
+                    st.subheader(prompt_keys[idx])
+                    st.write("Num Choices Made:", story_data["num_choices_made"])
+                    if st.button("Read story", use_container_width=True):
+                        st.experimental_set_query_params(s=file.removesuffix(".json"))
+                        load_session(saved_tales_dir)
+                        st.experimental_rerun()
+                    if story_data.get("ending_image"):
+                        st.image(str(generated_images_dir / story_data["ending_image"]))
+                    # st.json(story_data)
+
+        item_paginator(
+            "Stories",
+            prompt_keys,
+            display,
+            display_item_names=True,
+            enable_keypress_nav=True,
+        )
+
+
+def extract_prompts_from_saved():
+    result_dict = {}
+    counter_dict = {}
+
+    for file in saved_tales_dir.glob("*.json"):
+        with open(file, "r") as f:
+            data = json.load(f)
+
+            # Extracting the key
+            key = data.get("chat_history", [{}])[0].get("content", None)
+
+            if key is not None:
+                # If the key already exists, append the suffix and increment counter
+                if key in counter_dict:
+                    counter_dict[key] += 1
+                    key += f" - {counter_dict[key]}"
+                else:
+                    # Set counter to 1 for the new key
+                    counter_dict[key] = 1
+
+                result_dict[key] = file.name
+
+    return result_dict
 
 
 @dataclass
@@ -269,6 +330,8 @@ def generate_current_story_image(msg_number: int) -> str:
     # image_prompt = image_prompt.removeprefix('An oil painting of ').removesuffix('.') + ', digital art.'
 
     image_response = create_image(image_prompt)
+    if not "generated_image_prompts" in st.session_state:
+        st.session_state.generated_image_prompts = {}
     st.session_state.generated_image_prompts[msg_number] = image_prompt
     image_bytes = base64.b64decode(image_response.data[0]["b64_json"])
     output_path = generated_images_dir / (
@@ -320,14 +383,11 @@ def display_story_message(msg_num: int, message: ResponseWithChoices):
                 with st.spinner("Generating story image..."):
                     display_image = generate_current_story_image(msg_num)
             elif (
-                "Olive" in message.content
-                and not st.session_state.missolive_image_used
+                "Olive" in message.content and not st.session_state.missolive_image_used
             ):
                 display_image = st.session_state.missolive_image
                 st.session_state.missolive_image_used = True
-            elif (
-                "Rusty" in message.content and not st.session_state.rusty_image_used
-            ):
+            elif "Rusty" in message.content and not st.session_state.rusty_image_used:
                 display_image = st.session_state.rusty_image
                 st.session_state.rusty_image_used = True
             else:
