@@ -160,7 +160,7 @@ def get_story_prompt_view():
             st.session_state.story_in_progress = True
             generate_story_page()
     st.markdown("<h2 style='text-align: center;'>Or</h2>", unsafe_allow_html=True)
-    with st.expander("Read a previous story"):
+    with st.expander("Read a previous story", expanded=True):
         prompts = extract_prompts_from_saved()
         prompt_keys = sorted(prompts.keys())
 
