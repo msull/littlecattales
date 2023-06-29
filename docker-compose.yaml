@@ -6,6 +6,7 @@ services:
     build:
       context: ./
     environment:
+      GALLERY_ADMIN_PASSWORD: "${GALLERY_ADMIN_PASSWORD?Variable not set}"
       OPENAI_API_KEY: "${OPENAI_API_KEY?Variable not set}"
       SESSION_DIR: "/app/data"
     volumes:
