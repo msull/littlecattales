@@ -226,10 +226,16 @@ def visit_gallery_view():
         )
         return
 
+    stories_per_page = 6
+
     def view_story_gallery_page(page_num):
         columns = iter(st.columns(3))
 
-        for story_id in gallery_story_ids:
+        stories = gallery_story_ids[
+            page_num * stories_per_page : (page_num + 1) * stories_per_page
+        ]
+
+        for story_id in stories:
             # iterate and recreate the columns for each group of three
             # (rather than doing something like itercools.cycle) so that
             # the stories are forced to line up on each row
@@ -242,6 +248,13 @@ def visit_gallery_view():
                 story_data = json.loads(
                     (saved_tales_dir / (story_id + ".json")).read_text()
                 )
+                if story_data.get("ending_image"):
+                    st.image(
+                        str(generated_images_dir / story_data["ending_image"]),
+                        caption=story_data["chat_history"][0]["content"],
+                    )
+                else:
+                    st.subheader(story_data["chat_history"][0]["content"])
                 if st.button(
                     "Read story", key=f"read-{story_id}", use_container_width=True
                 ):
@@ -250,17 +263,11 @@ def visit_gallery_view():
                     load_session(saved_tales_dir)
                     st.experimental_rerun()
 
-                if story_data.get("ending_image"):
-                    st.image(
-                        str(generated_images_dir / story_data["ending_image"]),
-                        caption=story_data["chat_history"][0]["content"],
-                    )
-                else:
-                    st.subheader(story_data["chat_history"][0]["content"])
+                st.divider()
 
     item_paginator(
         "Story Gallery",
-        ceil(len(gallery_story_ids) / 9),
+        ceil(len(gallery_story_ids) / stories_per_page),
         view_story_gallery_page,
     )
 
