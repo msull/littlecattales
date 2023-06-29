@@ -3,11 +3,13 @@ import json
 import os
 import random
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 from time import sleep
 from typing import Optional
 
 import streamlit as st
+from diskcache import Cache
 from logzero import logger
 
 from utils.cat_tales_helpers import *
@@ -17,10 +19,15 @@ from utils.page_helpers import date_id, item_paginator, load_session, save_sessi
 
 st.set_page_config("Little Cat Tales", layout="wide")
 SESSION_DIR = os.environ["SESSION_DIR"]
+GALLERY_ADMIN_PASSWORD = os.environ["GALLERY_ADMIN_PASSWORD"]
 saved_tales_dir = Path(SESSION_DIR) / "cat_tales" / "adventures"
 saved_tales_dir.mkdir(parents=True, exist_ok=True)
 generated_images_dir = Path(SESSION_DIR) / "cat_tales" / "generated_images"
 generated_images_dir.mkdir(parents=True, exist_ok=True)
+
+read_stats_dir = Path(SESSION_DIR) / "cat_tales" / "read_stats"
+read_stats_dir.mkdir(parents=True, exist_ok=True)
+READ_STATS = Cache(str(read_stats_dir))
 
 IMAGE_DIR = (Path(__file__).parent / "images").relative_to(Path(__file__).parent)
 
@@ -73,6 +80,7 @@ def init_state(force=False):
                 [str(x) for x in (IMAGE_DIR / "missolive").iterdir()]
             )
             st.session_state.missolive_image_used = False
+            st.session_state.manage_gallery = False
 
 
 def reset_state():
@@ -159,41 +167,158 @@ def get_story_prompt_view():
             st.session_state.chat_history = chat_session.history
             st.session_state.story_in_progress = True
             generate_story_page()
+
     st.markdown("<h2 style='text-align: center;'>Or</h2>", unsafe_allow_html=True)
+    display_story_gallery()
+
+
+def display_story_gallery():
     with st.expander("Read a previous story", expanded=True):
-        prompts = extract_prompts_from_saved()
-        prompt_keys = sorted(prompts.keys())
+        if st.session_state.manage_gallery:
+            manage_gallery_view()
+        else:
+            visit_gallery_view()
 
-        def display(idx):
-            file = prompts[prompt_keys[idx]]
-            story_data = json.loads((saved_tales_dir / file).read_text())
 
-            columns = iter(st.columns((0.5, 6, 0.5)))
-            next(
-                columns
-            )  # throw away for formatting only -- empty columns on both sides
-            with next(columns):
-                inner_columns = iter(st.columns((1, 2, 1)))
-                # throw away for formatting only -- empty columns on both sides
-                next(inner_columns)
-                with next(inner_columns):
-                    st.subheader(prompt_keys[idx])
-                    st.write("Num Choices Made:", story_data["num_choices_made"])
-                    if st.button("Read story", use_container_width=True):
-                        st.experimental_set_query_params(s=file.removesuffix(".json"))
-                        load_session(saved_tales_dir)
-                        st.experimental_rerun()
-                    if story_data.get("ending_image"):
-                        st.image(str(generated_images_dir / story_data["ending_image"]))
-                    # st.json(story_data)
+def add_to_gallery(session_id):
+    gallery_data_file = saved_tales_dir / "gallery.json"
+    if not gallery_data_file.exists():
+        gallery_data_file.write_text(json.dumps([session_id]))
+        return
+    gallery_data: list[str] = json.loads(gallery_data_file.read_text())
+    if session_id not in gallery_data:
+        gallery_data.append(session_id)
+        gallery_data_file.write_text(json.dumps(gallery_data))
 
-        item_paginator(
-            "Stories",
-            prompt_keys,
-            display,
-            display_item_names=True,
-            enable_keypress_nav=True,
+
+def remove_from_gallery(session_id):
+    gallery_data_file = saved_tales_dir / "gallery.json"
+    if not gallery_data_file.exists():
+        return
+    gallery_data: list[str] = json.loads(gallery_data_file.read_text())
+    if session_id in gallery_data:
+        gallery_data.remove(session_id)
+        gallery_data_file.write_text(json.dumps(gallery_data))
+
+
+def is_in_gallery(session_id) -> bool:
+    gallery_data_file = saved_tales_dir / "gallery.json"
+    if not gallery_data_file.exists():
+        return False
+    gallery_data: list[str] = json.loads(gallery_data_file.read_text())
+    return session_id in gallery_data
+
+
+def visit_gallery_view():
+    gallery_data_file = saved_tales_dir / "gallery.json"
+    if not gallery_data_file.exists():
+        st.subheader(
+            "No stories in the gallery currently -- why not go have your own adventure?"
         )
+        return
+
+    gallery_story_ids: list[str] = sorted(
+        json.loads(gallery_data_file.read_text()), reverse=True
+    )
+    if not gallery_story_ids:
+        st.subheader(
+            "No stories in the gallery currently -- why not go have your own adventure?"
+        )
+        return
+
+    def view_story_gallery_page(page_num):
+        columns = iter(st.columns(3))
+
+        for story_id in gallery_story_ids:
+            # iterate and recreate the columns for each group of three
+            # (rather than doing something like itercools.cycle) so that
+            # the stories are forced to line up on each row
+            try:
+                column = next(columns)
+            except StopIteration:
+                columns = iter(st.columns(3))
+                column = next(columns)
+            with column:
+                story_data = json.loads(
+                    (saved_tales_dir / (story_id + ".json")).read_text()
+                )
+                if st.button(
+                    "Read story", key=f"read-{story_id}", use_container_width=True
+                ):
+                    READ_STATS.incr(story_id)
+                    st.experimental_set_query_params(s=story_id)
+                    load_session(saved_tales_dir)
+                    st.experimental_rerun()
+
+                if story_data.get("ending_image"):
+                    st.image(
+                        str(generated_images_dir / story_data["ending_image"]),
+                        caption=story_data["chat_history"][0]["content"],
+                    )
+                else:
+                    st.subheader(story_data["chat_history"][0]["content"])
+
+    item_paginator(
+        "Story Gallery",
+        ceil(len(gallery_story_ids) / 9),
+        view_story_gallery_page,
+    )
+
+
+def manage_gallery_view():
+    prompts = extract_prompts_from_saved()
+    prompt_keys = sorted(prompts.keys(), key=prompts.get, reverse=True)
+
+    if st.button("Stop managing gallery"):
+        st.session_state.manage_gallery = False
+        st.experimental_rerun()
+
+    def display(idx):
+        file = prompts[prompt_keys[idx]]
+        session_id = file.removesuffix(".json")
+        story_data = json.loads((saved_tales_dir / file).read_text())
+        logger.debug("DISPLAY")
+
+        columns = iter(st.columns((0.5, 6, 0.5)))
+        next(columns)  # throw away for formatting only -- empty columns on both sides
+        with next(columns):
+            inner_columns = iter(st.columns((1, 2, 1)))
+            # throw away for formatting only -- empty columns on both sides
+            next(inner_columns)
+            with next(inner_columns):
+                read_times = READ_STATS.get(session_id, 0)
+                if read_times:
+                    st.subheader(f"Read {read_times} times")
+                include_in_gallery = st.checkbox(
+                    "Include in gallery",
+                    key=f"checked-{session_id}",
+                    value=is_in_gallery(session_id),
+                )
+                if st.button("Save"):
+                    if include_in_gallery:
+                        add_to_gallery(session_id)
+                        st.info("Added to gallery")
+                    else:
+                        remove_from_gallery(session_id)
+                        st.info("Removed from gallery")
+                st.header(session_id)
+                st.subheader(prompt_keys[idx])
+                st.write("Num Choices Made:", story_data["num_choices_made"])
+                if st.button("Read story", use_container_width=True):
+                    st.experimental_set_query_params(s=session_id)
+                    load_session(saved_tales_dir)
+                    st.experimental_rerun()
+                if story_data.get("ending_image"):
+                    st.image(str(generated_images_dir / story_data["ending_image"]))
+                st.json(story_data["chat_history"])
+
+    item_paginator(
+        "Stories",
+        prompt_keys,
+        display,
+        display_item_names=True,
+        enable_keypress_nav=True,
+    )
 
 
 def extract_prompts_from_saved():
@@ -201,6 +326,8 @@ def extract_prompts_from_saved():
     counter_dict = {}
 
     for file in saved_tales_dir.glob("*.json"):
+        if file.name == "gallery.json":
+            continue
         with open(file, "r") as f:
             data = json.load(f)
 
@@ -557,5 +684,13 @@ if not st.session_state.story_in_progress:
 else:
     main_view()
 
+
 with st.expander("Session State"):
+    if st.checkbox("Manage gallery"):
+        if st.text_input(
+            "Gallery password", type="password"
+        ) == GALLERY_ADMIN_PASSWORD and st.button("Manage"):
+            st.session_state.manage_gallery = True
+            st.experimental_rerun()
+
     st.write(st.session_state)
