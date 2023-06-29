@@ -220,7 +220,7 @@ def load_session(session_dir: Union[Path, str], read_stats_cache: "Cache"):
                 loaded_session_data = json.loads(path.read_text())
                 # if this story is finished, increment the read stats for this load
                 if loaded_session_data.get("ending_image"):
-                    READ_STATS.incr(query_session)
+                    read_stats_cache.incr(query_session)
             except:
                 pass
             else:
