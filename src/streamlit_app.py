@@ -35,7 +35,7 @@ IMAGE_DIR = (Path(__file__).parent / "images").relative_to(Path(__file__).parent
 def init_state(force=False):
     if "story_in_progress" not in st.session_state or force:
         if not force:
-            load_session(saved_tales_dir)
+            load_session(saved_tales_dir, READ_STATS)
 
         if "story_in_progress" not in st.session_state:
             start_new_story = True
@@ -258,9 +258,8 @@ def visit_gallery_view():
                 if st.button(
                     "Read story", key=f"read-{story_id}", use_container_width=True
                 ):
-                    READ_STATS.incr(story_id)
                     st.experimental_set_query_params(s=story_id)
-                    load_session(saved_tales_dir)
+                    load_session(saved_tales_dir, READ_STATS)
                     st.experimental_rerun()
 
                 st.divider()
@@ -313,7 +312,7 @@ def manage_gallery_view():
                 st.write("Num Choices Made:", story_data["num_choices_made"])
                 if st.button("Read story", use_container_width=True):
                     st.experimental_set_query_params(s=session_id)
-                    load_session(saved_tales_dir)
+                    load_session(saved_tales_dir, READ_STATS)
                     st.experimental_rerun()
                 if story_data.get("ending_image"):
                     st.image(str(generated_images_dir / story_data["ending_image"]))

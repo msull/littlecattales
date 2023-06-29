@@ -3,7 +3,10 @@ import random
 from datetime import datetime
 from pathlib import Path
 from string import ascii_lowercase
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from diskcache import Cache
 
 import streamlit as st
 
@@ -190,7 +193,7 @@ def check_or_x(value: bool) -> str:
     return "✅" if value else "❌"
 
 
-def load_session(session_dir: Union[Path, str]):
+def load_session(session_dir: Union[Path, str], read_stats_cache: "Cache"):
     if isinstance(session_dir, str):
         session_dir = Path(session_dir)
     query_session = st.experimental_get_query_params().get("s")
@@ -215,6 +218,9 @@ def load_session(session_dir: Union[Path, str]):
             path = session_dir / (query_session + ".json")
             try:
                 loaded_session_data = json.loads(path.read_text())
+                # if this story is finished, increment the read stats for this load
+                if loaded_session_data.get("ending_image"):
+                    READ_STATS.incr(query_session)
             except:
                 pass
             else:
