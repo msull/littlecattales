@@ -393,7 +393,7 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
         spinner_msg = add_cat_names(random.choice(SPINNER_MSGS))
 
     if expect_more_choices:
-        if random.random() < 0.2 and len(chat_session.history) > 1:
+        if random.random() < 0.2 and len(chat_session.history) > 2:
             logger.warning("Early end incoming!")
             expect_more_choices = False
             reinforce_with = add_cat_names(BAD_ENDING_REINFORCEMENT_MSG)
