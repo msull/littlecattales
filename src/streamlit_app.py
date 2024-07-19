@@ -97,7 +97,7 @@ def get_story_prompt_view():
             st.session_state.cat2name = cat2[0]
             st.session_state.cat1pronouns = cat1[1]
             st.session_state.cat2pronouns = cat2[1]
-            st.experimental_rerun()
+            st.rerun()
         st.markdown(
             "<h2 style='text-align: center;'>OR</h2>",
             unsafe_allow_html=True,
@@ -135,7 +135,7 @@ def get_story_prompt_view():
                 st.session_state.cat2name = cat2name
                 st.session_state.cat1pronouns = cat1pronouns
                 st.session_state.cat2pronouns = cat2pronouns
-                st.experimental_rerun()
+                st.rerun()
 
     columns = iter(st.columns((0.5, 3, 3, 0.5)))
     next(columns)  # throw away for formatting only -- empty columns on both sides
@@ -260,7 +260,7 @@ def visit_gallery_view():
                 ):
                     st.experimental_set_query_params(s=story_id)
                     load_session(saved_tales_dir, READ_STATS)
-                    st.experimental_rerun()
+                    st.rerun()
 
                 st.divider()
 
@@ -277,7 +277,7 @@ def manage_gallery_view():
 
     if st.button("Stop managing gallery"):
         st.session_state.manage_gallery = False
-        st.experimental_rerun()
+        st.rerun()
 
     def display(idx):
         file = prompts[prompt_keys[idx]]
@@ -313,7 +313,7 @@ def manage_gallery_view():
                 if st.button("Read story", use_container_width=True):
                     st.experimental_set_query_params(s=session_id)
                     load_session(saved_tales_dir, READ_STATS)
-                    st.experimental_rerun()
+                    st.rerun()
                 if story_data.get("ending_image"):
                     st.image(str(generated_images_dir / story_data["ending_image"]))
                 st.json(story_data["chat_history"])
@@ -393,7 +393,7 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
         spinner_msg = add_cat_names(random.choice(SPINNER_MSGS))
 
     if expect_more_choices:
-        if random.random() < 0.2 and len(chat_session.history) > 2:
+        if random.random() < 0.2 and len(chat_session.history) > 4:
             logger.warning("Early end incoming!")
             expect_more_choices = False
             reinforce_with = add_cat_names(BAD_ENDING_REINFORCEMENT_MSG)
@@ -414,6 +414,7 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
                     initial_system_msg=add_cat_names(AI_ASSISTANT_MSG),
                     reinforcement_system_msg=reinforce_with,
                 )
+                response = response.model_dump()
             except Exception:  # error from OpenAI
                 logger.exception("Error while getting AI Resopnse")
                 sleep(1)
@@ -450,12 +451,12 @@ def generate_story_page(spinner_msg: Optional[str] = None, expect_more_choices=T
     chat_session.assistant_says(response["choices"][0]["message"]["content"])
     st.session_state.chat_history = chat_session.history
     save_session(saved_tales_dir)
-    st.experimental_rerun()
+    st.rerun()
 
 
 def generate_current_story_image(msg_number: int) -> str:
     chat_session = ChatSession(history=st.session_state.chat_history)
-    prompt_response = create_image_prompt(chat_session)
+    prompt_response = create_image_prompt(chat_session).model_dump()
     st.session_state.total_tokens_used += prompt_response["usage"]["total_tokens"]
 
     image_prompt: str = prompt_response["choices"][0]["message"]["content"].strip()
@@ -466,7 +467,7 @@ def generate_current_story_image(msg_number: int) -> str:
     if not "generated_image_prompts" in st.session_state:
         st.session_state.generated_image_prompts = {}
     st.session_state.generated_image_prompts[msg_number] = image_prompt
-    image_bytes = base64.b64decode(image_response.data[0]["b64_json"])
+    image_bytes = base64.b64decode(image_response["data"][0]["b64_json"])
     output_path = generated_images_dir / (
         st.session_state.session_id + f"-{msg_number}.png"
     )
@@ -612,7 +613,7 @@ def main_view():
             st.session_state.cat2name = save_cat2name
             st.session_state.cat1pronouns = save_cat1pronouns
             st.session_state.cat2pronouns = save_cat2pronouns
-            st.experimental_rerun()
+            st.rerun()
         return
 
 
@@ -697,6 +698,6 @@ with st.expander("Session State"):
             "Gallery password", type="password"
         ) == GALLERY_ADMIN_PASSWORD and st.button("Manage"):
             st.session_state.manage_gallery = True
-            st.experimental_rerun()
+            st.rerun()
 
     st.write(st.session_state)

@@ -30,8 +30,8 @@ class ChatSession:
         if reinforcement_system_msg:
             chat_history.append({"role": "system", "content": reinforcement_system_msg})
 
-        return openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0613", messages=chat_history, timeout=15
+        return openai.chat.completions.create(
+            model="gpt-4o-mini", messages=chat_history, timeout=15
         )
 
 
@@ -40,6 +40,6 @@ class FlaggedInputError(RuntimeError):
 
 
 def check_for_flagged_content(msg: str):
-    response = openai.Moderation.create(msg)
+    response = openai.moderations.create(input=msg)
     if response.results[0].flagged:
         raise FlaggedInputError()
